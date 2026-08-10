@@ -1,0 +1,8 @@
+{
+  "name": "clippost-app",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "ClipPost — post videos to TikTok and track your stats",
+  "engines": { "node": ">=18" }
+}

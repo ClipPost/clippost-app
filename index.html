@@ -1,0 +1,77 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>ClipPost</title>
+<link rel="icon" href="https://clippost.github.io/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="/style.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="/">
+    <svg class="logo" viewBox="0 0 32 32" xmlns="http://www.w3.org/2000/svg"><rect width="32" height="32" rx="8" fill="#2dd4bf"/><path d="M13 10.5v11l9-5.5-9-5.5Z" fill="#06231f"/></svg>
+    ClipPost
+  </a>
+  <div id="who" class="who" hidden>
+    <img id="avatar" class="avatar" alt="">
+    <span id="dname"></span>
+    <a class="ghost" href="/api/logout">Disconnect</a>
+  </div>
+</header>
+
+<main class="wrap">
+
+  <!-- not connected -->
+  <section id="connect" class="center" hidden>
+    <h1>Post to TikTok</h1>
+    <p class="muted">Connect your TikTok account to upload a video, write a caption, and track your stats.</p>
+    <a class="btn" href="/api/login">Connect TikTok</a>
+    <p id="connErr" class="err" hidden></p>
+  </section>
+
+  <!-- connected app -->
+  <section id="app" hidden>
+    <nav class="tabs">
+      <button class="tab on" data-tab="publish">Publish</button>
+      <button class="tab" data-tab="stats">Stats</button>
+    </nav>
+
+    <!-- PUBLISH -->
+    <div id="tab-publish" class="panel">
+      <div class="card">
+        <label class="fld">
+          <span>Video</span>
+          <input id="video" type="file" accept="video/mp4,video/quicktime">
+        </label>
+        <div id="vinfo" class="hint" hidden></div>
+
+        <label class="fld">
+          <span>Caption</span>
+          <textarea id="caption" rows="3" maxlength="2200" placeholder="Write your caption…"></textarea>
+          <small id="ccount" class="hint">0 / 2200</small>
+        </label>
+
+        <label class="fld">
+          <span>Who can see this</span>
+          <select id="privacy"></select>
+        </label>
+        <div id="privNote" class="hint" hidden></div>
+
+        <button id="publish" class="btn" disabled>Publish to TikTok</button>
+        <div id="pubResult" class="result" hidden></div>
+      </div>
+    </div>
+
+    <!-- STATS -->
+    <div id="tab-stats" class="panel" hidden>
+      <div class="stats-row" id="statCards"></div>
+      <h3 class="sec">Recent videos</h3>
+      <div class="vids" id="vids"><p class="muted">Loading…</p></div>
+    </div>
+  </section>
+
+</main>
+<script src="/app.js"></script>
+</body>
+</html>
