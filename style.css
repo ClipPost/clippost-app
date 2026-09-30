@@ -61,3 +61,13 @@ input[type=file]{padding:9px}
 .vid .m b{color:var(--text);font-size:14px}
 
 @media(max-width:520px){ .stats-row{grid-template-columns:repeat(2,1fr)} }
+
+.preview{width:100%;max-height:420px;border-radius:10px;background:#000;margin:-6px 0 18px}
+.poster{display:flex;gap:6px;align-items:baseline;margin-bottom:16px;font-size:15px}
+.lbl{display:block;font-size:14px;font-weight:600;margin-bottom:7px;color:var(--muted)}
+.chk{display:flex;align-items:flex-start;gap:9px;margin:6px 0;font-size:15px;cursor:pointer}
+.chk input{margin-top:5px;accent-color:var(--accent)}
+.chk.sub{margin-left:26px}
+.chk.dis{opacity:.45;cursor:not-allowed}
+.consent{font-size:13px;color:var(--muted);margin:4px 0 6px}
+#publish{margin-top:14px}

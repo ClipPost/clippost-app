@@ -45,6 +45,7 @@
           <input id="video" type="file" accept="video/mp4,video/quicktime">
         </label>
         <div id="vinfo" class="hint" hidden></div>
+        <video id="preview" class="preview" controls muted playsinline hidden></video>
 
         <label class="fld">
           <span>Caption</span>
@@ -52,11 +53,35 @@
           <small id="ccount" class="hint">0 / 2200</small>
         </label>
 
+        <div class="poster" id="poster">Posting to <b id="pname">…</b> <span id="puser" class="muted"></span></div>
+        <div id="limitNote" class="err" hidden></div>
+
         <label class="fld">
-          <span>Who can see this</span>
-          <select id="privacy"></select>
+          <span>Who can see this video</span>
+          <select id="privacy"><option value="" selected disabled>Select…</option></select>
         </label>
         <div id="privNote" class="hint" hidden></div>
+
+        <div class="fld">
+          <span class="lbl">Allow users to</span>
+          <label class="chk"><input type="checkbox" id="allowComment"> Comment</label>
+          <label class="chk"><input type="checkbox" id="allowDuet"> Duet</label>
+          <label class="chk"><input type="checkbox" id="allowStitch"> Stitch</label>
+          <small id="interNote" class="hint" hidden>Greyed-out options are turned off in your TikTok settings.</small>
+        </div>
+
+        <div class="fld">
+          <label class="chk sw"><input type="checkbox" id="cc"> <b>Disclose video content</b></label>
+          <small class="hint">Turn on to disclose that this video promotes goods or services in exchange for something of value.</small>
+          <div id="ccBox" hidden>
+            <label class="chk sub"><input type="checkbox" id="ccYours"> <span><b>Your brand</b><br><small class="muted">You are promoting yourself or your own business.</small></span></label>
+            <label class="chk sub"><input type="checkbox" id="ccBranded"> <span><b>Branded content</b><br><small class="muted">You are promoting another brand or a third party.</small></span></label>
+            <div id="ccLabel" class="hint"></div>
+          </div>
+        </div>
+
+        <p id="consent" class="consent"></p>
+        <small class="hint">After publishing, it may take a few minutes for the video to appear on your profile.</small>
 
         <button id="publish" class="btn" disabled>Publish to TikTok</button>
         <div id="pubResult" class="result" hidden></div>

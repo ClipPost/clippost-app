@@ -49,7 +49,7 @@ function showApp() {
   );
 
   wirePublish();
-  loadPrivacy();
+  loadCreator();
 }
 
 function switchTab(name) {
@@ -57,9 +57,16 @@ function switchTab(name) {
   $('tab-publish').hidden = name !== 'publish';
   $('tab-stats').hidden = name !== 'stats';
   if (name === 'stats') loadStats();
+  if (name === 'publish') loadCreator();   // always show the latest account info
 }
 
 /* ---------- Publish ---------- */
+
+let CREATOR = null;   // latest creator_info (re-read every time the publish page is shown)
+let VIDEO_SEC = null;
+
+const MUSIC = '<a href="https://www.tiktok.com/legal/page/global/music-usage-confirmation/en" target="_blank" rel="noopener">Music Usage Confirmation</a>';
+const BC = '<a href="https://www.tiktok.com/legal/page/global/bc-policy/en" target="_blank" rel="noopener">Branded Content Policy</a>';
 
 function wirePublish() {
   const caption = $('caption');
@@ -69,41 +76,93 @@ function wirePublish() {
 
   $('video').addEventListener('change', () => {
     const f = $('video').files[0];
-    if (!f) { $('vinfo').hidden = true; $('publish').disabled = true; return; }
+    const pv = $('preview');
+    VIDEO_SEC = null;
+    if (!f) { $('vinfo').hidden = true; pv.hidden = true; updateState(); return; }
     const mb = (f.size / 1048576).toFixed(1);
     $('vinfo').hidden = false;
     $('vinfo').textContent = f.name + ' · ' + mb + ' MB';
-    if (f.size > 64 * 1048576) {
-      $('vinfo').textContent += ' — too large (max 64 MB in this version)';
-      $('publish').disabled = true;
-    } else {
-      $('publish').disabled = false;
-    }
+    pv.src = URL.createObjectURL(f); pv.hidden = false;           // preview of what will be posted
+    pv.onloadedmetadata = () => { VIDEO_SEC = pv.duration; updateState(); };
+    updateState();
   });
 
+  ['privacy', 'allowComment', 'allowDuet', 'allowStitch', 'cc', 'ccYours', 'ccBranded']
+    .forEach((id) => $(id).addEventListener('change', updateState));
   $('publish').addEventListener('click', doPublish);
+  updateState();
 }
 
-async function loadPrivacy() {
+async function loadCreator() {
   const sel = $('privacy');
-  sel.innerHTML = '<option>Loading…</option>';
+  sel.innerHTML = '<option value="" selected disabled>Loading…</option>';
   try {
     const r = await fetch('/api/creator-info');
     const j = await r.json();
-    const opts = (j.info && j.info.privacy_level_options) || ['SELF_ONLY'];
-    sel.innerHTML = '';
-    opts.forEach((o) => {
-      const el = document.createElement('option');
-      el.value = o; el.textContent = PRIV_LABEL[o] || o;
-      sel.appendChild(el);
-    });
-    if (opts.length === 1 && opts[0] === 'SELF_ONLY') {
-      $('privNote').hidden = false;
-      $('privNote').textContent = 'Only private posting is available until the app is approved by TikTok.';
-    }
-  } catch {
-    sel.innerHTML = '<option value="SELF_ONLY">Only me (private)</option>';
+    if (j.error) throw new Error(j.error.message || j.error.code || 'creator_info failed');
+    CREATOR = j.info || {};
+  } catch (e) {
+    CREATOR = null;
+    $('limitNote').hidden = false;
+    $('limitNote').textContent = 'Could not read your TikTok account right now. Please try again later.';
+    sel.innerHTML = '<option value="" selected disabled>Unavailable</option>';
+    updateState();
+    return;
   }
+  $('pname').textContent = CREATOR.creator_nickname || USER.display_name || 'your TikTok account';
+  $('puser').textContent = CREATOR.creator_username ? '@' + CREATOR.creator_username : '';
+
+  // No default privacy: the creator must pick one of the options TikTok returns.
+  sel.innerHTML = '<option value="" selected disabled>Select…</option>';
+  (CREATOR.privacy_level_options || []).forEach((o) => {
+    const el = document.createElement('option');
+    el.value = o; el.textContent = PRIV_LABEL[o] || o;
+    sel.appendChild(el);
+  });
+
+  // Interactions start unchecked; grey out the ones disabled in the creator's settings.
+  const dis = { allowComment: CREATOR.comment_disabled, allowDuet: CREATOR.duet_disabled, allowStitch: CREATOR.stitch_disabled };
+  let any = false;
+  Object.entries(dis).forEach(([id, off]) => {
+    const c = $(id); c.checked = false; c.disabled = !!off;
+    c.parentElement.classList.toggle('dis', !!off); any = any || !!off;
+  });
+  $('interNote').hidden = !any;
+  updateState();
+}
+
+/** Recomputes labels, consent text and whether Publish is allowed. */
+function updateState() {
+  const priv = $('privacy');
+  const cc = $('cc').checked, yours = $('ccYours').checked, branded = $('ccBranded').checked;
+  $('ccBox').hidden = !cc;
+
+  // Branded content cannot be private.
+  const selfOpt = [...priv.options].find((o) => o.value === 'SELF_ONLY');
+  if (selfOpt) {
+    selfOpt.disabled = cc && branded;
+    selfOpt.textContent = cc && branded ? 'Only me (not available for branded content)' : PRIV_LABEL.SELF_ONLY;
+    if (cc && branded && priv.value === 'SELF_ONLY') priv.value = '';
+  }
+
+  $('ccLabel').textContent = !cc ? '' :
+    branded ? 'Your video will be labeled as "Paid partnership".' :
+    yours ? 'Your video will be labeled as "Promotional content".' :
+    'You need to indicate if your content promotes yourself, a third party, or both.';
+
+  $('consent').innerHTML = cc && branded
+    ? 'By posting, you agree to TikTok\'s ' + BC + ' and ' + MUSIC + '.'
+    : 'By posting, you agree to TikTok\'s ' + MUSIC + '.';
+
+  const max = CREATOR && CREATOR.max_video_post_duration_sec;
+  const tooLong = max && VIDEO_SEC && VIDEO_SEC > max;
+  const f = $('video').files[0];
+  const tooBig = f && f.size > 64 * 1048576;
+  const note = tooLong ? `This video is ${Math.round(VIDEO_SEC)} s — your account can post up to ${max} s.`
+    : tooBig ? 'Video is too large (max 64 MB in this version).' : '';
+  if (CREATOR) { $('limitNote').hidden = !note; $('limitNote').textContent = note; }
+
+  $('publish').disabled = !CREATOR || !f || !priv.value || tooLong || tooBig || (cc && !yours && !branded);
 }
 
 async function doPublish() {
@@ -123,6 +182,11 @@ async function doPublish() {
       body: JSON.stringify({
         title: $('caption').value,
         privacy_level: $('privacy').value,
+        disable_comment: !$('allowComment').checked,
+        disable_duet: !$('allowDuet').checked,
+        disable_stitch: !$('allowStitch').checked,
+        brand_organic_toggle: $('cc').checked && $('ccYours').checked,
+        brand_content_toggle: $('cc').checked && $('ccBranded').checked,
         video_size: f.size,
       }),
     });
@@ -147,9 +211,9 @@ async function doPublish() {
     if (status === 'PUBLISH_COMPLETE' || status === 'SEND_TO_USER_INBOX') {
       out.className = 'result ok';
       out.textContent = status === 'PUBLISH_COMPLETE'
-        ? '✓ Published to your TikTok.'
+        ? '✓ Published to your TikTok. It may take a few minutes to appear on your profile.'
         : '✓ Sent to your TikTok inbox — finish it in the TikTok app.';
-      $('video').value = ''; $('vinfo').hidden = true;
+      $('video').value = ''; $('vinfo').hidden = true; $('preview').hidden = true; updateState();
     } else {
       throw new Error('TikTok returned status: ' + status);
     }
@@ -157,7 +221,7 @@ async function doPublish() {
     out.className = 'result bad';
     out.textContent = '✕ ' + (e.message || 'Something went wrong.');
   } finally {
-    btn.disabled = false;
+    updateState();
   }
 }
 
