@@ -71,3 +71,4 @@ input[type=file]{padding:9px}
 .chk.dis{opacity:.45;cursor:not-allowed}
 .consent{font-size:13px;color:var(--muted);margin:4px 0 6px}
 #publish{margin-top:14px}
+[hidden]{display:none!important}
